@@ -2,7 +2,13 @@ use std::collections::*;
 use std::fmt;
 use std::hash::{BuildHasher, Hash};
 use std::marker::PhantomData;
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
+use std::num::{
+    NonZeroI128, NonZeroI16, NonZeroI32, NonZeroI64, NonZeroI8, NonZeroIsize, NonZeroU128,
+    NonZeroU16, NonZeroU32, NonZeroU64, NonZeroU8, NonZeroUsize,
+};
 use std::sync::Arc;
+use std::time::Duration;
 
 use bytes::Bytes;
 use futures_core::Stream;
@@ -39,6 +45,107 @@ autoencode!(u32, encode_u32);
 autoencode!(u64, encode_u64);
 autoencode!(f32, encode_f32);
 autoencode!(f64, encode_f64);
+
+////////////////////////////////////////////////////////////////////////////////
+
+macro_rules! encode_as_str {
+    ($ty:ty) => {
+        impl<'en> ToStream<'en> for $ty {
+            fn to_stream<E: Encoder<'en>>(&'en self, encoder: E) -> Result<E::Ok, E::Error> {
+                encoder.collect_str(self)
+            }
+        }
+
+        impl<'en> IntoStream<'en> for $ty {
+            fn into_stream<E: Encoder<'en>>(self, encoder: E) -> Result<E::Ok, E::Error> {
+                encoder.collect_str(&self)
+            }
+        }
+    };
+}
+
+encode_as_str!(i128);
+encode_as_str!(u128);
+
+macro_rules! encode_nonzero {
+    ($ty:ty, $method:ident) => {
+        impl<'en> ToStream<'en> for $ty {
+            fn to_stream<E: Encoder<'en>>(&'en self, encoder: E) -> Result<E::Ok, E::Error> {
+                encoder.$method(self.get())
+            }
+        }
+
+        impl<'en> IntoStream<'en> for $ty {
+            fn into_stream<E: Encoder<'en>>(self, encoder: E) -> Result<E::Ok, E::Error> {
+                encoder.$method(self.get())
+            }
+        }
+    };
+    ($ty:ty, $method:ident, $cast:ty) => {
+        impl<'en> ToStream<'en> for $ty {
+            fn to_stream<E: Encoder<'en>>(&'en self, encoder: E) -> Result<E::Ok, E::Error> {
+                encoder.$method(self.get() as $cast)
+            }
+        }
+
+        impl<'en> IntoStream<'en> for $ty {
+            fn into_stream<E: Encoder<'en>>(self, encoder: E) -> Result<E::Ok, E::Error> {
+                encoder.$method(self.get() as $cast)
+            }
+        }
+    };
+}
+
+encode_nonzero!(NonZeroI8, encode_i8);
+encode_nonzero!(NonZeroI16, encode_i16);
+encode_nonzero!(NonZeroI32, encode_i32);
+encode_nonzero!(NonZeroI64, encode_i64);
+encode_nonzero!(NonZeroIsize, encode_i64, i64);
+
+encode_nonzero!(NonZeroU8, encode_u8);
+encode_nonzero!(NonZeroU16, encode_u16);
+encode_nonzero!(NonZeroU32, encode_u32);
+encode_nonzero!(NonZeroU64, encode_u64);
+encode_nonzero!(NonZeroUsize, encode_u64, u64);
+
+macro_rules! encode_nonzero_as_str {
+    ($ty:ty) => {
+        impl<'en> ToStream<'en> for $ty {
+            fn to_stream<E: Encoder<'en>>(&'en self, encoder: E) -> Result<E::Ok, E::Error> {
+                encoder.collect_str(&self.get())
+            }
+        }
+
+        impl<'en> IntoStream<'en> for $ty {
+            fn into_stream<E: Encoder<'en>>(self, encoder: E) -> Result<E::Ok, E::Error> {
+                encoder.collect_str(&self.get())
+            }
+        }
+    };
+}
+
+encode_nonzero_as_str!(NonZeroI128);
+encode_nonzero_as_str!(NonZeroU128);
+
+encode_as_str!(Ipv4Addr);
+encode_as_str!(Ipv6Addr);
+encode_as_str!(IpAddr);
+encode_as_str!(SocketAddr);
+
+impl<'en> IntoStream<'en> for Duration {
+    fn into_stream<E: Encoder<'en>>(self, encoder: E) -> Result<E::Ok, E::Error> {
+        let mut tuple = encoder.encode_tuple(2)?;
+        tuple.encode_element(self.as_secs())?;
+        tuple.encode_element(self.subsec_nanos())?;
+        tuple.end()
+    }
+}
+
+impl<'en> ToStream<'en> for Duration {
+    fn to_stream<E: Encoder<'en>>(&'en self, encoder: E) -> Result<E::Ok, E::Error> {
+        (*self).into_stream(encoder)
+    }
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 

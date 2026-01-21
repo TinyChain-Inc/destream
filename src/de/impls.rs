@@ -2,6 +2,12 @@ use std::collections::*;
 use std::convert::TryInto;
 use std::hash::{BuildHasher, Hash};
 use std::marker::PhantomData;
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
+use std::num::{
+    NonZeroI128, NonZeroI16, NonZeroI32, NonZeroI64, NonZeroI8, NonZeroIsize, NonZeroU128,
+    NonZeroU16, NonZeroU32, NonZeroU64, NonZeroU8, NonZeroUsize,
+};
+use std::time::Duration;
 
 use bytes::Bytes;
 use uuid::Uuid;
@@ -53,6 +59,90 @@ autodecode!(u64, visit_u64, decode_u64);
 autodecode!(f32, visit_f32, decode_f32);
 autodecode!(f64, visit_f64, decode_f64);
 autodecode!(String, visit_string, decode_string);
+
+macro_rules! decode_int_via_any {
+    (
+        $ty:ty,
+        $visitor:ident,
+        $expecting:expr,
+        $visit_i64:ident,
+        $visit_u64:ident
+    ) => {
+        struct $visitor;
+
+        impl Visitor for $visitor {
+            type Value = $ty;
+
+            fn expecting() -> &'static str {
+                $expecting
+            }
+
+            fn $visit_i64<E: Error>(self, v: i64) -> Result<Self::Value, E> {
+                Ok(v as $ty)
+            }
+
+            fn $visit_u64<E: Error>(self, v: u64) -> Result<Self::Value, E> {
+                Ok(v as $ty)
+            }
+
+            fn visit_string<E: Error>(self, v: String) -> Result<Self::Value, E> {
+                v.parse()
+                    .map_err(|_cause| Error::invalid_value(v, Self::expecting()))
+            }
+        }
+
+        impl FromStream for $ty {
+            type Context = ();
+
+            async fn from_stream<D: Decoder>(_: (), decoder: &mut D) -> Result<Self, D::Error> {
+                decoder.decode_any($visitor).await
+            }
+        }
+    };
+}
+
+decode_int_via_any!(i128, I128Visitor, "an i128", visit_i64, visit_u64);
+
+macro_rules! decode_uint_via_any {
+    ($ty:ty, $visitor:ident, $expecting:expr) => {
+        struct $visitor;
+
+        impl Visitor for $visitor {
+            type Value = $ty;
+
+            fn expecting() -> &'static str {
+                $expecting
+            }
+
+            fn visit_i64<E: Error>(self, v: i64) -> Result<Self::Value, E> {
+                if v >= 0 {
+                    Ok(v as $ty)
+                } else {
+                    Err(Error::invalid_value(v, Self::expecting()))
+                }
+            }
+
+            fn visit_u64<E: Error>(self, v: u64) -> Result<Self::Value, E> {
+                Ok(v as $ty)
+            }
+
+            fn visit_string<E: Error>(self, v: String) -> Result<Self::Value, E> {
+                v.parse()
+                    .map_err(|_cause| Error::invalid_value(v, Self::expecting()))
+            }
+        }
+
+        impl FromStream for $ty {
+            type Context = ();
+
+            async fn from_stream<D: Decoder>(_: (), decoder: &mut D) -> Result<Self, D::Error> {
+                decoder.decode_any($visitor).await
+            }
+        }
+    };
+}
+
+decode_uint_via_any!(u128, U128Visitor, "a u128");
 
 impl FromStream for isize {
     type Context = ();
@@ -120,6 +210,109 @@ impl<T: FromStream> FromStream for Option<T> {
         };
 
         decoder.decode_option(visitor).await
+    }
+}
+
+macro_rules! decode_nonzero {
+    ($ty:ty, $inner:ty, $expecting:expr) => {
+        impl FromStream for $ty {
+            type Context = ();
+
+            async fn from_stream<D: Decoder>(_: (), decoder: &mut D) -> Result<Self, D::Error> {
+                let value: $inner = <$inner as FromStream>::from_stream((), decoder).await?;
+                Self::new(value).ok_or_else(|| Error::invalid_value(value, $expecting))
+            }
+        }
+    };
+}
+
+decode_nonzero!(NonZeroI8, i8, "a nonzero i8");
+decode_nonzero!(NonZeroI16, i16, "a nonzero i16");
+decode_nonzero!(NonZeroI32, i32, "a nonzero i32");
+decode_nonzero!(NonZeroI64, i64, "a nonzero i64");
+decode_nonzero!(NonZeroI128, i128, "a nonzero i128");
+decode_nonzero!(NonZeroIsize, isize, "a nonzero isize");
+
+decode_nonzero!(NonZeroU8, u8, "a nonzero u8");
+decode_nonzero!(NonZeroU16, u16, "a nonzero u16");
+decode_nonzero!(NonZeroU32, u32, "a nonzero u32");
+decode_nonzero!(NonZeroU64, u64, "a nonzero u64");
+decode_nonzero!(NonZeroU128, u128, "a nonzero u128");
+decode_nonzero!(NonZeroUsize, usize, "a nonzero usize");
+
+struct ParseFromStringVisitor<T> {
+    expecting: &'static str,
+    marker: PhantomData<T>,
+}
+
+impl<T> ParseFromStringVisitor<T> {
+    fn new(expecting: &'static str) -> Self {
+        Self {
+            expecting,
+            marker: PhantomData,
+        }
+    }
+}
+
+impl<T> Visitor for ParseFromStringVisitor<T>
+where
+    T: std::str::FromStr + Send,
+{
+    type Value = T;
+
+    fn expecting() -> &'static str {
+        "a parseable string"
+    }
+
+    fn visit_string<E: Error>(self, v: String) -> Result<Self::Value, E> {
+        v.parse()
+            .map_err(|_cause| Error::invalid_value(v, self.expecting))
+    }
+}
+
+macro_rules! decode_from_string {
+    ($ty:ty, $expecting:expr) => {
+        impl FromStream for $ty {
+            type Context = ();
+
+            async fn from_stream<D: Decoder>(_: (), decoder: &mut D) -> Result<Self, D::Error> {
+                decoder
+                    .decode_string(ParseFromStringVisitor::<$ty>::new($expecting))
+                    .await
+            }
+        }
+    };
+}
+
+decode_from_string!(Ipv4Addr, "an IPv4 address");
+decode_from_string!(Ipv6Addr, "an IPv6 address");
+decode_from_string!(IpAddr, "an IP address");
+decode_from_string!(SocketAddr, "a socket address");
+
+struct DurationVisitor;
+
+impl Visitor for DurationVisitor {
+    type Value = Duration;
+
+    fn expecting() -> &'static str {
+        "a duration tuple (secs, nanos)"
+    }
+
+    async fn visit_seq<A: SeqAccess>(self, mut seq: A) -> Result<Self::Value, A::Error> {
+        let secs = seq.expect_next::<u64>(()).await?;
+        let nanos = seq.expect_next::<u32>(()).await?;
+        if nanos >= 1_000_000_000 {
+            return Err(Error::invalid_value(nanos, "nanos < 1,000,000,000"));
+        }
+        Ok(Duration::new(secs, nanos))
+    }
+}
+
+impl FromStream for Duration {
+    type Context = ();
+
+    async fn from_stream<D: Decoder>(_: (), decoder: &mut D) -> Result<Self, D::Error> {
+        decoder.decode_tuple(2, DurationVisitor).await
     }
 }
 
