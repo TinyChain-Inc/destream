@@ -5,7 +5,7 @@ use std::marker::PhantomData;
 use std::sync::Arc;
 
 use bytes::Bytes;
-use futures::stream::Stream;
+use futures_core::Stream;
 use uuid::Uuid;
 
 use super::{EncodeTuple, Encoder, IntoStream, MapStream, SeqStream, ToStream};

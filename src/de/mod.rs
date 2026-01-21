@@ -43,8 +43,6 @@
 
 use std::fmt;
 
-use async_trait::async_trait;
-
 mod impls;
 
 mod size_hint {
@@ -89,7 +87,6 @@ pub trait Error: Send + Sized + std::error::Error {
 /// A data format that can decode a given well-formatted stream using one or more [`Visitor`]s.
 ///
 /// Based on `serde::de::Deserializer`.
-#[async_trait]
 pub trait Decoder: Send {
     /// Type to return in case of a decoding error.
     type Error: Error;
@@ -214,7 +211,6 @@ pub trait Decoder: Send {
 /// This trait describes a value which can be decoded from a stream.
 ///
 /// Based on `serde::de::Deserialize`.
-#[async_trait]
 pub trait FromStream: Send + Sized {
     /// The decoding context of this type, useful in situations where the stream to be decoded
     /// may be too large to hold in main memory.
@@ -232,7 +228,6 @@ pub trait FromStream: Send + Sized {
 /// Provides a [`Visitor`] with access to an array of type `T`.
 ///
 /// This is a trait that a [`Decoder`] passes to a `Visitor` implementation.
-#[async_trait]
 pub trait ArrayAccess<T>: Send {
     type Error: Error;
 
@@ -247,7 +242,6 @@ pub trait ArrayAccess<T>: Send {
 /// This is a trait that a [`Decoder`] passes to a `Visitor` implementation.
 ///
 /// Based on `serde::de::MapAccess`.
-#[async_trait]
 pub trait MapAccess: Send {
     /// Type to return in case of a decoding error.
     type Error: Error;
@@ -286,7 +280,6 @@ pub trait MapAccess: Send {
 /// which decodes each item in a sequence.
 ///
 /// Based on `serde::de::SeqAccess`.
-#[async_trait]
 pub trait SeqAccess: Send {
     /// The type to return if decoding encounters an error.
     type Error: Error;
@@ -324,7 +317,6 @@ pub trait SeqAccess: Send {
 /// This trait describes a visitor responsible for decoding a stream.
 ///
 /// Based on `serde::de::Visitor`.
-#[async_trait]
 pub trait Visitor: Send + Sized {
     /// The type which this [`Visitor`] is responsible for decoding.
     type Value;

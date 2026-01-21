@@ -69,7 +69,7 @@ use std::convert::Infallible;
 use std::fmt;
 
 use bytes::Bytes;
-use futures::Stream;
+use futures_core::Stream;
 use uuid::Uuid;
 
 mod impls;
