@@ -98,7 +98,7 @@ impl<'en, K: IntoStream<'en> + 'en, V: IntoStream<'en> + 'en, S: Stream<Item = (
     }
 }
 
-impl<'en, K: 'en, V: 'en, S: Stream<Item = (K, V)> + 'en> From<S> for MapStream<K, V, S> {
+impl<K, V, S: Stream<Item = (K, V)>> From<S> for MapStream<K, V, S> {
     fn from(source: S) -> Self {
         Self { source }
     }
@@ -160,7 +160,7 @@ impl<'en, T: IntoStream<'en> + 'en, S: Stream<Item = T> + 'en> SeqStream<T, S> {
     }
 }
 
-impl<'en, T: 'en, S: Stream<Item = T> + 'en> From<S> for SeqStream<T, S> {
+impl<T, S: Stream<Item = T>> From<S> for SeqStream<T, S> {
     fn from(source: S) -> Self {
         Self { source }
     }

@@ -13,11 +13,11 @@
 //! respectively.
 //!
 //! Important differences between `destream` and `serde`:
-//!  - `destream` supports decoding from and encoding to a `futures_core::Stream`.
-//!  - `destream` does not (yet) support the `derive` macro, so you can't derive `FromStream` or
-//!     `ToStream`, and there is no built-in functionality for decoding/encoding a given `struct`.
-//!  - `Decoder` assumes the static lifetime and only supports owned types, but `Encoder` uses a
-//!     specific lifetime `'en`. This is the opposite of `serde`.
+//! - `destream` supports decoding from and encoding to a `futures_core::Stream`.
+//! - `destream` does not (yet) support the `derive` macro, so you can't derive `FromStream` or
+//!   `ToStream`, and there is no built-in functionality for decoding/encoding a given `struct`.
+//! - `Decoder` assumes the static lifetime and only supports owned types, but `Encoder` uses a
+//!   specific lifetime `'en`. This is the opposite of `serde`.
 //!
 //! `destream` itself does not implement support for any specific serialization format.
 //! [`destream_json`] provides support for streaming JSON.
@@ -25,6 +25,8 @@
 //! [`destream_json`]: http://docs.rs/destream_json/
 //! [`serde`]: http://docs.rs/serde
 
+// `destream`'s public API uses `async fn` in traits; this crate supports stable Rust, so we keep
+// this `allow` until `async_fn_in_trait` is stabilized.
 #![allow(async_fn_in_trait)]
 
 pub mod de;

@@ -2,9 +2,9 @@
 //!
 //! The two most important traits in this module are [`FromStream`] and [`Decoder`].
 //!
-//!  - **A type that implements [`FromStream`] is a data structure** that can be decoded from any
-//!  stream encoding supported by `destream`, and conversely
-//!  - **A type that implements `Decoder` is a data format** that can decode any supported stream.
+//! - **A type that implements [`FromStream`] is a data structure** that can be decoded from any
+//!   stream encoding supported by `destream`, and conversely
+//! - **A type that implements `Decoder` is a data format** that can decode any supported stream.
 //!
 //! # The FromStream trait
 //!
@@ -430,10 +430,9 @@ pub trait Visitor: Send + Sized {
     /// The input contains an array of `bool`s.
     ///
     /// The default implementation fails with a type error.
-    #[allow(unused_variables)]
     async fn visit_array_bool<A: ArrayAccess<bool>>(
         self,
-        array: A,
+        _array: A,
     ) -> Result<Self::Value, A::Error> {
         Err(Error::invalid_type("boolean array", Self::expecting()))
     }
@@ -441,80 +440,94 @@ pub trait Visitor: Send + Sized {
     /// The input contains an array of `i8`s.
     ///
     /// The default implementation fails with a type error.
-    #[allow(unused_variables)]
-    async fn visit_array_i8<A: ArrayAccess<i8>>(self, array: A) -> Result<Self::Value, A::Error> {
+    async fn visit_array_i8<A: ArrayAccess<i8>>(self, _array: A) -> Result<Self::Value, A::Error> {
         Err(Error::invalid_type("i8 array", Self::expecting()))
     }
 
     /// The input contains an array of `i16`s.
     ///
     /// The default implementation fails with a type error.
-    #[allow(unused_variables)]
-    async fn visit_array_i16<A: ArrayAccess<i16>>(self, array: A) -> Result<Self::Value, A::Error> {
+    async fn visit_array_i16<A: ArrayAccess<i16>>(
+        self,
+        _array: A,
+    ) -> Result<Self::Value, A::Error> {
         Err(Error::invalid_type("i16 array", Self::expecting()))
     }
 
     /// The input contains an array of `i32`s.
     ///
     /// The default implementation fails with a type error.
-    #[allow(unused_variables)]
-    async fn visit_array_i32<A: ArrayAccess<i32>>(self, array: A) -> Result<Self::Value, A::Error> {
+    async fn visit_array_i32<A: ArrayAccess<i32>>(
+        self,
+        _array: A,
+    ) -> Result<Self::Value, A::Error> {
         Err(Error::invalid_type("i32 array", Self::expecting()))
     }
 
     /// The input contains an array of `i64`s.
     ///
     /// The default implementation fails with a type error.
-    #[allow(unused_variables)]
-    async fn visit_array_i64<A: ArrayAccess<i64>>(self, array: A) -> Result<Self::Value, A::Error> {
+    async fn visit_array_i64<A: ArrayAccess<i64>>(
+        self,
+        _array: A,
+    ) -> Result<Self::Value, A::Error> {
         Err(Error::invalid_type("i64 array", Self::expecting()))
     }
 
     /// The input contains an array of `u8`s.
     ///
     /// The default implementation fails with a type error.
-    #[allow(unused_variables)]
-    async fn visit_array_u8<A: ArrayAccess<u8>>(self, array: A) -> Result<Self::Value, A::Error> {
+    async fn visit_array_u8<A: ArrayAccess<u8>>(self, _array: A) -> Result<Self::Value, A::Error> {
         Err(Error::invalid_type("u8 array", Self::expecting()))
     }
 
     /// The input contains an array of `u16`s.
     ///
     /// The default implementation fails with a type error.
-    #[allow(unused_variables)]
-    async fn visit_array_u16<A: ArrayAccess<u16>>(self, array: A) -> Result<Self::Value, A::Error> {
+    async fn visit_array_u16<A: ArrayAccess<u16>>(
+        self,
+        _array: A,
+    ) -> Result<Self::Value, A::Error> {
         Err(Error::invalid_type("u16 array", Self::expecting()))
     }
 
     /// The input contains an array of `u32`s.
     ///
     /// The default implementation fails with a type error.
-    #[allow(unused_variables)]
-    async fn visit_array_u32<A: ArrayAccess<u32>>(self, array: A) -> Result<Self::Value, A::Error> {
+    async fn visit_array_u32<A: ArrayAccess<u32>>(
+        self,
+        _array: A,
+    ) -> Result<Self::Value, A::Error> {
         Err(Error::invalid_type("u32 array", Self::expecting()))
     }
 
     /// The input contains an array of `u64`s.
     ///
     /// The default implementation fails with a type error.
-    #[allow(unused_variables)]
-    async fn visit_array_u64<A: ArrayAccess<u64>>(self, array: A) -> Result<Self::Value, A::Error> {
+    async fn visit_array_u64<A: ArrayAccess<u64>>(
+        self,
+        _array: A,
+    ) -> Result<Self::Value, A::Error> {
         Err(Error::invalid_type("u64 array", Self::expecting()))
     }
 
     /// The input contains an array of `f32`s.
     ///
     /// The default implementation fails with a type error.
-    #[allow(unused_variables)]
-    async fn visit_array_f32<A: ArrayAccess<f32>>(self, array: A) -> Result<Self::Value, A::Error> {
+    async fn visit_array_f32<A: ArrayAccess<f32>>(
+        self,
+        _array: A,
+    ) -> Result<Self::Value, A::Error> {
         Err(Error::invalid_type("f32 array", Self::expecting()))
     }
 
     /// The input contains an array of `f64`s.
     ///
     /// The default implementation fails with a type error.
-    #[allow(unused_variables)]
-    async fn visit_array_f64<A: ArrayAccess<f64>>(self, array: A) -> Result<Self::Value, A::Error> {
+    async fn visit_array_f64<A: ArrayAccess<f64>>(
+        self,
+        _array: A,
+    ) -> Result<Self::Value, A::Error> {
         Err(Error::invalid_type("f64 array", Self::expecting()))
     }
 
@@ -541,22 +554,19 @@ pub trait Visitor: Send + Sized {
 
     /// The input contains an optional that is present.
     /// The default implementation fails with a type error.
-    #[allow(unused_variables)]
-    async fn visit_some<D: Decoder>(self, decoder: &mut D) -> Result<Self::Value, D::Error> {
+    async fn visit_some<D: Decoder>(self, _decoder: &mut D) -> Result<Self::Value, D::Error> {
         Err(Error::invalid_type("Option::Some", Self::expecting()))
     }
 
     /// The input contains a key-value map.
     /// The default implementation fails with a type error.
-    #[allow(unused_variables)]
-    async fn visit_map<A: MapAccess>(self, map: A) -> Result<Self::Value, A::Error> {
+    async fn visit_map<A: MapAccess>(self, _map: A) -> Result<Self::Value, A::Error> {
         Err(Error::invalid_type("map", Self::expecting()))
     }
 
     /// The input contains a sequence of elements.
     /// The default implementation fails with a type error.
-    #[allow(unused_variables)]
-    async fn visit_seq<A: SeqAccess>(self, seq: A) -> Result<Self::Value, A::Error> {
+    async fn visit_seq<A: SeqAccess>(self, _seq: A) -> Result<Self::Value, A::Error> {
         Err(Error::invalid_type("sequence", Self::expecting()))
     }
 }

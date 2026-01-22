@@ -465,11 +465,10 @@ where
     type Context = ();
 
     async fn from_stream<D: Decoder>(
-        context: Self::Context,
+        _context: Self::Context,
         decoder: &mut D,
     ) -> Result<Self, D::Error> {
         struct SeqVisitor<T, const N: usize> {
-            context: (),
             value: PhantomData<T>,
         }
 
@@ -491,7 +490,7 @@ where
                     smallvec::SmallVec::new()
                 };
 
-                while let Some(item) = seq.next_element(self.context).await? {
+                while let Some(item) = seq.next_element(()).await? {
                     items.push(item);
                 }
 
@@ -499,12 +498,7 @@ where
             }
         }
 
-        decoder
-            .decode_seq(SeqVisitor {
-                context,
-                value: PhantomData,
-            })
-            .await
+        decoder.decode_seq(SeqVisitor { value: PhantomData }).await
     }
 }
 
@@ -642,6 +636,8 @@ macro_rules! decode_tuple {
                         marker: PhantomData<($($name,)+)>,
                     }
 
+                    // This macro binds local variables named `T0`, `T1`, etc to match its type
+                    // parameters, which triggers `non_snake_case`.
                     #[allow(non_snake_case)]
                     impl<$($name: FromStream<Context = ()>),+> Visitor for TupleVisitor<$($name,)+> {
                         type Value = ($($name,)+);
