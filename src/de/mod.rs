@@ -2,9 +2,9 @@
 //!
 //! The two most important traits in this module are [`FromStream`] and [`Decoder`].
 //!
-//!  - **A type that implements [`FromStream`] is a data structure** that can be decoded from any
-//!  stream encoding supported by `destream`, and conversely
-//!  - **A type that implements `Decoder` is a data format** that can decode any supported stream.
+//! - **A type that implements [`FromStream`] is a data structure** that can be decoded from any
+//!   stream encoding supported by `destream`, and conversely
+//! - **A type that implements `Decoder` is a data format** that can decode any supported stream.
 //!
 //! # The FromStream trait
 //!

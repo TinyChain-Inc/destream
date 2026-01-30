@@ -453,11 +453,10 @@ where
     type Context = ();
 
     async fn from_stream<D: Decoder>(
-        context: Self::Context,
+        _context: Self::Context,
         decoder: &mut D,
     ) -> Result<Self, D::Error> {
         struct SeqVisitor<T, const N: usize> {
-            context: (),
             value: PhantomData<T>,
         }
 
@@ -479,7 +478,7 @@ where
                     smallvec::SmallVec::new()
                 };
 
-                while let Some(item) = seq.next_element(self.context).await? {
+                while let Some(item) = seq.next_element(()).await? {
                     items.push(item);
                 }
 
@@ -487,12 +486,7 @@ where
             }
         }
 
-        decoder
-            .decode_seq(SeqVisitor {
-                context,
-                value: PhantomData,
-            })
-            .await
+        decoder.decode_seq(SeqVisitor { value: PhantomData }).await
     }
 }
 

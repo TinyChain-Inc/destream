@@ -309,7 +309,7 @@ macro_rules! encode_array {
 }
 
 encode_array! {
-    01 02 03 04 05 06 07 08 09 10
+    1 2 3 4 5 6 7 8 9 10
     11 12 13 14 15 16 17 18 19 20
     21 22 23 24 25 26 27 28 29 30
     31 32
@@ -474,7 +474,7 @@ encode_map!(HashMap<K: Eq + Hash, V, H: BuildHasher>);
 
 impl<'en, T: ToStream<'en> + 'en> ToStream<'en> for Arc<T> {
     fn to_stream<E: Encoder<'en>>(&'en self, encoder: E) -> Result<E::Ok, E::Error> {
-        (&**self).to_stream(encoder)
+        (**self).to_stream(encoder)
     }
 }
 
@@ -486,7 +486,7 @@ impl<'en, T: IntoStream<'en> + 'en> IntoStream<'en> for Box<T> {
 
 impl<'en, T: ToStream<'en> + 'en> ToStream<'en> for Box<T> {
     fn to_stream<E: Encoder<'en>>(&'en self, encoder: E) -> Result<E::Ok, E::Error> {
-        (&**self).to_stream(encoder)
+        (**self).to_stream(encoder)
     }
 }
 
