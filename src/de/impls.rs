@@ -2,6 +2,9 @@ use std::collections::*;
 use std::convert::TryInto;
 use std::hash::{BuildHasher, Hash};
 use std::marker::PhantomData;
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
+use std::num::{NonZeroI128, NonZeroU128};
+use std::time::Duration;
 
 use bytes::Bytes;
 use futures::future::TryFutureExt;
@@ -54,6 +57,183 @@ autodecode!(u64, visit_u64, decode_u64);
 autodecode!(f32, visit_f32, decode_f32);
 autodecode!(f64, visit_f64, decode_f64);
 autodecode!(String, visit_string, decode_string);
+
+impl FromStream for i128 {
+    type Context = ();
+
+    async fn from_stream<D: Decoder>(
+        _context: Self::Context,
+        decoder: &mut D,
+    ) -> Result<Self, D::Error> {
+        struct I128Visitor;
+
+        impl Visitor for I128Visitor {
+            type Value = i128;
+
+            fn expecting() -> &'static str {
+                "an i128"
+            }
+
+            fn visit_i64<E: Error>(self, v: i64) -> Result<Self::Value, E> {
+                Ok(v as i128)
+            }
+
+            fn visit_u64<E: Error>(self, v: u64) -> Result<Self::Value, E> {
+                Ok(v as i128)
+            }
+
+            fn visit_string<E: Error>(self, v: String) -> Result<Self::Value, E> {
+                v.parse().map_err(E::custom)
+            }
+        }
+
+        decoder.decode_any(I128Visitor).await
+    }
+}
+
+impl FromStream for u128 {
+    type Context = ();
+
+    async fn from_stream<D: Decoder>(
+        _context: Self::Context,
+        decoder: &mut D,
+    ) -> Result<Self, D::Error> {
+        struct U128Visitor;
+
+        impl Visitor for U128Visitor {
+            type Value = u128;
+
+            fn expecting() -> &'static str {
+                "a u128"
+            }
+
+            fn visit_i64<E: Error>(self, v: i64) -> Result<Self::Value, E> {
+                if v < 0 {
+                    Err(Error::invalid_value(v, Self::expecting()))
+                } else {
+                    Ok(v as u128)
+                }
+            }
+
+            fn visit_u64<E: Error>(self, v: u64) -> Result<Self::Value, E> {
+                Ok(v as u128)
+            }
+
+            fn visit_string<E: Error>(self, v: String) -> Result<Self::Value, E> {
+                v.parse().map_err(E::custom)
+            }
+        }
+
+        decoder.decode_any(U128Visitor).await
+    }
+}
+
+impl FromStream for NonZeroI128 {
+    type Context = ();
+
+    async fn from_stream<D: Decoder>(
+        _context: Self::Context,
+        decoder: &mut D,
+    ) -> Result<Self, D::Error> {
+        let value = i128::from_stream((), decoder).await?;
+        NonZeroI128::new(value).ok_or_else(|| Error::invalid_value(value, "a non-zero i128"))
+    }
+}
+
+impl FromStream for NonZeroU128 {
+    type Context = ();
+
+    async fn from_stream<D: Decoder>(
+        _context: Self::Context,
+        decoder: &mut D,
+    ) -> Result<Self, D::Error> {
+        let value = u128::from_stream((), decoder).await?;
+        NonZeroU128::new(value).ok_or_else(|| Error::invalid_value(value, "a non-zero u128"))
+    }
+}
+
+impl FromStream for IpAddr {
+    type Context = ();
+
+    async fn from_stream<D: Decoder>(
+        _context: Self::Context,
+        decoder: &mut D,
+    ) -> Result<Self, D::Error> {
+        let s = String::from_stream((), decoder).await?;
+        s.parse().map_err(<D::Error as Error>::custom)
+    }
+}
+
+impl FromStream for Ipv4Addr {
+    type Context = ();
+
+    async fn from_stream<D: Decoder>(
+        _context: Self::Context,
+        decoder: &mut D,
+    ) -> Result<Self, D::Error> {
+        let s = String::from_stream((), decoder).await?;
+        s.parse().map_err(<D::Error as Error>::custom)
+    }
+}
+
+impl FromStream for Ipv6Addr {
+    type Context = ();
+
+    async fn from_stream<D: Decoder>(
+        _context: Self::Context,
+        decoder: &mut D,
+    ) -> Result<Self, D::Error> {
+        let s = String::from_stream((), decoder).await?;
+        s.parse().map_err(<D::Error as Error>::custom)
+    }
+}
+
+impl FromStream for SocketAddr {
+    type Context = ();
+
+    async fn from_stream<D: Decoder>(
+        _context: Self::Context,
+        decoder: &mut D,
+    ) -> Result<Self, D::Error> {
+        let s = String::from_stream((), decoder).await?;
+        s.parse().map_err(<D::Error as Error>::custom)
+    }
+}
+
+impl FromStream for Duration {
+    type Context = ();
+
+    async fn from_stream<D: Decoder>(
+        _context: Self::Context,
+        decoder: &mut D,
+    ) -> Result<Self, D::Error> {
+        struct DurationVisitor;
+
+        impl Visitor for DurationVisitor {
+            type Value = Duration;
+
+            fn expecting() -> &'static str {
+                "a Duration"
+            }
+
+            async fn visit_seq<A: SeqAccess>(self, mut seq: A) -> Result<Self::Value, A::Error> {
+                let secs: u64 = seq.expect_next(()).await?;
+                let nanos: u32 = seq.expect_next(()).await?;
+
+                if nanos >= 1_000_000_000 {
+                    Err(Error::invalid_value(
+                        nanos,
+                        "a number of nanoseconds less than 1_000_000_000",
+                    ))
+                } else {
+                    Ok(Duration::new(secs, nanos))
+                }
+            }
+        }
+
+        decoder.decode_tuple(2, DurationVisitor).await
+    }
+}
 
 impl FromStream for isize {
     type Context = ();
@@ -273,11 +453,10 @@ where
     type Context = ();
 
     async fn from_stream<D: Decoder>(
-        context: Self::Context,
+        _context: Self::Context,
         decoder: &mut D,
     ) -> Result<Self, D::Error> {
         struct SeqVisitor<T, const N: usize> {
-            context: (),
             value: PhantomData<T>,
         }
 
@@ -299,7 +478,7 @@ where
                     smallvec::SmallVec::new()
                 };
 
-                while let Some(item) = seq.next_element(self.context).await? {
+                while let Some(item) = seq.next_element(()).await? {
                     items.push(item);
                 }
 
@@ -307,12 +486,7 @@ where
             }
         }
 
-        decoder
-            .decode_seq(SeqVisitor {
-                context,
-                value: PhantomData,
-            })
-            .await
+        decoder.decode_seq(SeqVisitor { value: PhantomData }).await
     }
 }
 
