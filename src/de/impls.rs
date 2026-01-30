@@ -61,7 +61,10 @@ autodecode!(String, visit_string, decode_string);
 impl FromStream for i128 {
     type Context = ();
 
-    async fn from_stream<D: Decoder>(_context: Self::Context, decoder: &mut D) -> Result<Self, D::Error> {
+    async fn from_stream<D: Decoder>(
+        _context: Self::Context,
+        decoder: &mut D,
+    ) -> Result<Self, D::Error> {
         struct I128Visitor;
 
         impl Visitor for I128Visitor {
@@ -91,7 +94,10 @@ impl FromStream for i128 {
 impl FromStream for u128 {
     type Context = ();
 
-    async fn from_stream<D: Decoder>(_context: Self::Context, decoder: &mut D) -> Result<Self, D::Error> {
+    async fn from_stream<D: Decoder>(
+        _context: Self::Context,
+        decoder: &mut D,
+    ) -> Result<Self, D::Error> {
         struct U128Visitor;
 
         impl Visitor for U128Visitor {
@@ -125,7 +131,10 @@ impl FromStream for u128 {
 impl FromStream for NonZeroI128 {
     type Context = ();
 
-    async fn from_stream<D: Decoder>(_context: Self::Context, decoder: &mut D) -> Result<Self, D::Error> {
+    async fn from_stream<D: Decoder>(
+        _context: Self::Context,
+        decoder: &mut D,
+    ) -> Result<Self, D::Error> {
         let value = i128::from_stream((), decoder).await?;
         NonZeroI128::new(value).ok_or_else(|| Error::invalid_value(value, "a non-zero i128"))
     }
@@ -134,7 +143,10 @@ impl FromStream for NonZeroI128 {
 impl FromStream for NonZeroU128 {
     type Context = ();
 
-    async fn from_stream<D: Decoder>(_context: Self::Context, decoder: &mut D) -> Result<Self, D::Error> {
+    async fn from_stream<D: Decoder>(
+        _context: Self::Context,
+        decoder: &mut D,
+    ) -> Result<Self, D::Error> {
         let value = u128::from_stream((), decoder).await?;
         NonZeroU128::new(value).ok_or_else(|| Error::invalid_value(value, "a non-zero u128"))
     }
@@ -143,7 +155,10 @@ impl FromStream for NonZeroU128 {
 impl FromStream for IpAddr {
     type Context = ();
 
-    async fn from_stream<D: Decoder>(_context: Self::Context, decoder: &mut D) -> Result<Self, D::Error> {
+    async fn from_stream<D: Decoder>(
+        _context: Self::Context,
+        decoder: &mut D,
+    ) -> Result<Self, D::Error> {
         let s = String::from_stream((), decoder).await?;
         s.parse().map_err(<D::Error as Error>::custom)
     }
@@ -152,7 +167,10 @@ impl FromStream for IpAddr {
 impl FromStream for Ipv4Addr {
     type Context = ();
 
-    async fn from_stream<D: Decoder>(_context: Self::Context, decoder: &mut D) -> Result<Self, D::Error> {
+    async fn from_stream<D: Decoder>(
+        _context: Self::Context,
+        decoder: &mut D,
+    ) -> Result<Self, D::Error> {
         let s = String::from_stream((), decoder).await?;
         s.parse().map_err(<D::Error as Error>::custom)
     }
@@ -161,7 +179,10 @@ impl FromStream for Ipv4Addr {
 impl FromStream for Ipv6Addr {
     type Context = ();
 
-    async fn from_stream<D: Decoder>(_context: Self::Context, decoder: &mut D) -> Result<Self, D::Error> {
+    async fn from_stream<D: Decoder>(
+        _context: Self::Context,
+        decoder: &mut D,
+    ) -> Result<Self, D::Error> {
         let s = String::from_stream((), decoder).await?;
         s.parse().map_err(<D::Error as Error>::custom)
     }
@@ -170,7 +191,10 @@ impl FromStream for Ipv6Addr {
 impl FromStream for SocketAddr {
     type Context = ();
 
-    async fn from_stream<D: Decoder>(_context: Self::Context, decoder: &mut D) -> Result<Self, D::Error> {
+    async fn from_stream<D: Decoder>(
+        _context: Self::Context,
+        decoder: &mut D,
+    ) -> Result<Self, D::Error> {
         let s = String::from_stream((), decoder).await?;
         s.parse().map_err(<D::Error as Error>::custom)
     }
@@ -179,7 +203,10 @@ impl FromStream for SocketAddr {
 impl FromStream for Duration {
     type Context = ();
 
-    async fn from_stream<D: Decoder>(_context: Self::Context, decoder: &mut D) -> Result<Self, D::Error> {
+    async fn from_stream<D: Decoder>(
+        _context: Self::Context,
+        decoder: &mut D,
+    ) -> Result<Self, D::Error> {
         struct DurationVisitor;
 
         impl Visitor for DurationVisitor {
@@ -194,7 +221,10 @@ impl FromStream for Duration {
                 let nanos: u32 = seq.expect_next(()).await?;
 
                 if nanos >= 1_000_000_000 {
-                    Err(Error::invalid_value(nanos, "a number of nanoseconds less than 1_000_000_000"))
+                    Err(Error::invalid_value(
+                        nanos,
+                        "a number of nanoseconds less than 1_000_000_000",
+                    ))
                 } else {
                     Ok(Duration::new(secs, nanos))
                 }
