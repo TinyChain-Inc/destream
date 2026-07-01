@@ -5,6 +5,8 @@ use futures::stream;
 use num_bigint::BigUint;
 use num_traits::identities::One;
 
+#[allow(dead_code)]
+// This is a reference example type for downstream codec crates; it is not exercised here.
 struct Fibonacci {
     one_ago: BigUint,
     two_ago: BigUint,

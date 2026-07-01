@@ -1,11 +1,11 @@
 [package]
 name = "destream"
-version = "0.9.0"
+version = "0.10.1"
 authors = ["code@tinychain.net"]
 edition = "2021"
 license = "Apache-2.0"
 description = "Library for async stream (de)serialization"
-repository = "https://github.com/haydnv/destream"
+repository = "https://github.com/TinyChain-Inc/destream"
 readme = "README.md"
 
 categories = ["asynchronous", "encoding", "parsing", "rust-patterns"]

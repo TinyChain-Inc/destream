@@ -2,7 +2,10 @@ use std::collections::*;
 use std::fmt;
 use std::hash::{BuildHasher, Hash};
 use std::marker::PhantomData;
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
+use std::num::{NonZeroI128, NonZeroU128};
 use std::sync::Arc;
+use std::time::Duration;
 
 use bytes::Bytes;
 use futures::stream::Stream;
@@ -39,6 +42,120 @@ autoencode!(u32, encode_u32);
 autoencode!(u64, encode_u64);
 autoencode!(f32, encode_f32);
 autoencode!(f64, encode_f64);
+
+impl<'en> ToStream<'en> for i128 {
+    fn to_stream<E: Encoder<'en>>(&'en self, encoder: E) -> Result<E::Ok, E::Error> {
+        IntoStream::into_stream(self.to_string(), encoder)
+    }
+}
+
+impl<'en> IntoStream<'en> for i128 {
+    fn into_stream<E: Encoder<'en>>(self, encoder: E) -> Result<E::Ok, E::Error> {
+        IntoStream::into_stream(self.to_string(), encoder)
+    }
+}
+
+impl<'en> ToStream<'en> for u128 {
+    fn to_stream<E: Encoder<'en>>(&'en self, encoder: E) -> Result<E::Ok, E::Error> {
+        IntoStream::into_stream(self.to_string(), encoder)
+    }
+}
+
+impl<'en> IntoStream<'en> for u128 {
+    fn into_stream<E: Encoder<'en>>(self, encoder: E) -> Result<E::Ok, E::Error> {
+        IntoStream::into_stream(self.to_string(), encoder)
+    }
+}
+
+impl<'en> ToStream<'en> for NonZeroI128 {
+    fn to_stream<E: Encoder<'en>>(&'en self, encoder: E) -> Result<E::Ok, E::Error> {
+        IntoStream::into_stream(self.get().to_string(), encoder)
+    }
+}
+
+impl<'en> IntoStream<'en> for NonZeroI128 {
+    fn into_stream<E: Encoder<'en>>(self, encoder: E) -> Result<E::Ok, E::Error> {
+        IntoStream::into_stream(self.get().to_string(), encoder)
+    }
+}
+
+impl<'en> ToStream<'en> for NonZeroU128 {
+    fn to_stream<E: Encoder<'en>>(&'en self, encoder: E) -> Result<E::Ok, E::Error> {
+        IntoStream::into_stream(self.get().to_string(), encoder)
+    }
+}
+
+impl<'en> IntoStream<'en> for NonZeroU128 {
+    fn into_stream<E: Encoder<'en>>(self, encoder: E) -> Result<E::Ok, E::Error> {
+        IntoStream::into_stream(self.get().to_string(), encoder)
+    }
+}
+
+impl<'en> ToStream<'en> for IpAddr {
+    fn to_stream<E: Encoder<'en>>(&'en self, encoder: E) -> Result<E::Ok, E::Error> {
+        IntoStream::into_stream(self.to_string(), encoder)
+    }
+}
+
+impl<'en> IntoStream<'en> for IpAddr {
+    fn into_stream<E: Encoder<'en>>(self, encoder: E) -> Result<E::Ok, E::Error> {
+        IntoStream::into_stream(self.to_string(), encoder)
+    }
+}
+
+impl<'en> ToStream<'en> for Ipv4Addr {
+    fn to_stream<E: Encoder<'en>>(&'en self, encoder: E) -> Result<E::Ok, E::Error> {
+        IntoStream::into_stream(self.to_string(), encoder)
+    }
+}
+
+impl<'en> IntoStream<'en> for Ipv4Addr {
+    fn into_stream<E: Encoder<'en>>(self, encoder: E) -> Result<E::Ok, E::Error> {
+        IntoStream::into_stream(self.to_string(), encoder)
+    }
+}
+
+impl<'en> ToStream<'en> for Ipv6Addr {
+    fn to_stream<E: Encoder<'en>>(&'en self, encoder: E) -> Result<E::Ok, E::Error> {
+        IntoStream::into_stream(self.to_string(), encoder)
+    }
+}
+
+impl<'en> IntoStream<'en> for Ipv6Addr {
+    fn into_stream<E: Encoder<'en>>(self, encoder: E) -> Result<E::Ok, E::Error> {
+        IntoStream::into_stream(self.to_string(), encoder)
+    }
+}
+
+impl<'en> ToStream<'en> for SocketAddr {
+    fn to_stream<E: Encoder<'en>>(&'en self, encoder: E) -> Result<E::Ok, E::Error> {
+        IntoStream::into_stream(self.to_string(), encoder)
+    }
+}
+
+impl<'en> IntoStream<'en> for SocketAddr {
+    fn into_stream<E: Encoder<'en>>(self, encoder: E) -> Result<E::Ok, E::Error> {
+        IntoStream::into_stream(self.to_string(), encoder)
+    }
+}
+
+impl<'en> ToStream<'en> for Duration {
+    fn to_stream<E: Encoder<'en>>(&'en self, encoder: E) -> Result<E::Ok, E::Error> {
+        let mut tuple = encoder.encode_tuple(2)?;
+        tuple.encode_element(self.as_secs())?;
+        tuple.encode_element(self.subsec_nanos())?;
+        tuple.end()
+    }
+}
+
+impl<'en> IntoStream<'en> for Duration {
+    fn into_stream<E: Encoder<'en>>(self, encoder: E) -> Result<E::Ok, E::Error> {
+        let mut tuple = encoder.encode_tuple(2)?;
+        tuple.encode_element(self.as_secs())?;
+        tuple.encode_element(self.subsec_nanos())?;
+        tuple.end()
+    }
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -192,7 +309,7 @@ macro_rules! encode_array {
 }
 
 encode_array! {
-    01 02 03 04 05 06 07 08 09 10
+    1 2 3 4 5 6 7 8 9 10
     11 12 13 14 15 16 17 18 19 20
     21 22 23 24 25 26 27 28 29 30
     31 32
@@ -357,7 +474,7 @@ encode_map!(HashMap<K: Eq + Hash, V, H: BuildHasher>);
 
 impl<'en, T: ToStream<'en> + 'en> ToStream<'en> for Arc<T> {
     fn to_stream<E: Encoder<'en>>(&'en self, encoder: E) -> Result<E::Ok, E::Error> {
-        (&**self).to_stream(encoder)
+        (**self).to_stream(encoder)
     }
 }
 
@@ -369,7 +486,7 @@ impl<'en, T: IntoStream<'en> + 'en> IntoStream<'en> for Box<T> {
 
 impl<'en, T: ToStream<'en> + 'en> ToStream<'en> for Box<T> {
     fn to_stream<E: Encoder<'en>>(&'en self, encoder: E) -> Result<E::Ok, E::Error> {
-        (&**self).to_stream(encoder)
+        (**self).to_stream(encoder)
     }
 }
 
