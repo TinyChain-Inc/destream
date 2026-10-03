@@ -43,7 +43,10 @@
 
 use std::fmt;
 
+mod container;
 mod impls;
+
+pub use container::{Container, Inspection, Kind, Slot};
 
 mod size_hint {
     use std::cmp;
@@ -84,13 +87,32 @@ pub trait Error: Send + Sized + std::error::Error {
     }
 }
 
-/// A data format that can decode a given well-formatted stream using one or more [`Visitor`]s.
+/// A data format that decodes typed values through [`Visitor`]s or container cursors.
+///
+/// Fixed-schema visitors delegate typed fields. For input-dependent nesting,
+/// value owners use [`Self::peek_kind`], [`Self::open_container`], and
+/// [`Self::finish_child`] with an explicit frame stack. The cursor interface
+/// enables iterative decoding but cannot flatten a caller's recursive visitor.
 ///
 /// Based on `serde::de::Deserializer`.
 #[trait_variant::make(Send)]
 pub trait Decoder: Send {
     /// Type to return in case of a decoding error.
     type Error: Error;
+
+    /// Inspect the next value's shape without consuming it.
+    async fn peek_kind(&mut self) -> Result<Kind, Self::Error>;
+
+    /// Open one container, consuming an immediate closing delimiter if empty.
+    async fn open_container(
+        &mut self,
+        kind: Kind,
+        size_hint: Option<usize>,
+    ) -> Result<Container, Self::Error>;
+
+    /// Finish the child just consumed, validating its following delimiter.
+    /// This consumes map colons as well as container separators and closing delimiters.
+    async fn finish_child(&mut self, container: &mut Container) -> Result<(), Self::Error>;
 
     /// Require the `Decoder` to figure out how to drive the visitor based
     /// on what data type is in the input.
@@ -101,6 +123,17 @@ pub trait Decoder: Send {
     /// `Decoder::decode_any` means your data type will be able to
     /// decode self-describing formats only.
     async fn decode_any<V: Visitor>(&mut self, visitor: V) -> Result<V::Value, Self::Error>;
+
+    /// Inspect one value without allocating its text, arrays, or containers.
+    ///
+    /// The synchronous callback receives bounded borrowed observations. A callback
+    /// error stops consumption immediately. The decoder validates its wire grammar
+    /// and nesting limits; callers own type-specific allocation estimates. A
+    /// decoder may retain the current caller-owned input chunk while consuming
+    /// it, but does not copy that entire chunk into inspection scratch.
+    async fn inspect_any<F>(&mut self, inspect: F) -> Result<(), Self::Error>
+    where
+        F: for<'a> FnMut(Inspection<'a>) -> Result<(), Self::Error> + Send;
 
     /// Hint that the [`FromStream`] type is expecting a `bool` value.
     async fn decode_bool<V: Visitor>(&mut self, visitor: V) -> Result<V::Value, Self::Error>;

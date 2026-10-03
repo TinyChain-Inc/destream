@@ -72,7 +72,10 @@ use bytes::Bytes;
 use futures::Stream;
 use uuid::Uuid;
 
+mod events;
 mod impls;
+
+pub use events::Event;
 
 /// A stream encoding error
 pub trait Error {
@@ -220,6 +223,15 @@ pub trait Encoder<'en>: Sized {
     ///
     /// [`encode_tuple`]: #tymethod.encode_tuple
     type EncodeTuple: EncodeTuple<'en, Ok = Self::Ok, Error = Self::Error>;
+
+    /// Encode one value from a fallible, pull-based structural [`Event`] stream.
+    /// The stream may borrow its input and need not implement `Unpin`. Recursive
+    /// value owners use an explicit frame stack and delegate only leaves through
+    /// ordinary encoding; events alone do not prevent call-stack exhaustion.
+    fn encode_events<T, S>(self, events: S) -> Result<Self::Ok, Self::Error>
+    where
+        T: IntoStream<'en> + 'en,
+        S: Stream<Item = Result<Event<T>, Self::Error>> + Send + 'en;
 
     /// Encode a `bool`.
     fn encode_bool(self, v: bool) -> Result<Self::Ok, Self::Error>;
