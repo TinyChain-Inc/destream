@@ -1,6 +1,10 @@
 # destream
 Rust library for asynchronous stream (de)serialization.
 
+Built-in fixed-length sequence visitors, including `Duration`, require exact cardinality
+and sequence completion. Invalid duration nanoseconds reject before completion
+validation.
+
 Use `FromStream`, `ToStream`, and `IntoStream` for ordinary typed values;
 fixed-schema types can implement visitors and delegate their fields to these traits.
 
