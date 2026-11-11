@@ -10,10 +10,8 @@ use bytes::Bytes;
 use futures::future::TryFutureExt;
 use uuid::Uuid;
 
+use super::{size_hint, ArrayAccess, Decoder, Error, FromStream, MapAccess, SeqAccess, Visitor};
 use crate::IgnoredAny;
-
-use super::size_hint;
-use super::{ArrayAccess, Decoder, Error, FromStream, MapAccess, SeqAccess, Visitor};
 
 macro_rules! autodecode {
     ($ty:ident, $visit_method:ident, $decode_method:ident) => {
@@ -226,6 +224,10 @@ impl FromStream for Duration {
                         "a number of nanoseconds less than 1_000_000_000",
                     ))
                 } else {
+                    if seq.next_element::<IgnoredAny>(()).await?.is_some() {
+                        return Err(Error::invalid_length(3, Self::expecting()));
+                    }
+
                     Ok(Duration::new(secs, nanos))
                 }
             }
@@ -551,12 +553,17 @@ macro_rules! decode_array {
                     self,
                     mut seq: A
                 ) -> Result<Self::Value, A::Error> {
-                    Ok([$(
+                    let values = [$(
                         match seq.next_element(self.context).await? {
                             Some(val) => val,
                             None => return Err(Error::invalid_length($n, Self::expecting())),
                         }
-                    ),+])
+                    ),+];
+                    if seq.next_element::<IgnoredAny>(()).await?.is_some() {
+                        return Err(Error::invalid_length($len + 1, Self::expecting()));
+                    }
+
+                    Ok(values)
                 }
             }
 
@@ -639,6 +646,10 @@ macro_rules! decode_tuple {
                                     None => return Err(Error::invalid_length($n, Self::expecting())),
                                 };
                             )+
+
+                            if seq.next_element::<IgnoredAny>(()).await?.is_some() {
+                                return Err(Error::invalid_length($len + 1, Self::expecting()));
+                            }
 
                             Ok(($($name,)+))
                         }
@@ -844,12 +855,20 @@ impl Visitor for UuidVisitor {
         mut array: A,
     ) -> Result<Self::Value, A::Error> {
         let mut buf = [0u8; 16];
-        let len = array.buffer(&mut buf).await?;
-        if len == buf.len() {
-            Ok(Uuid::from_bytes(buf))
-        } else {
-            Err(Error::invalid_length(len, Self::expecting()))
+        let mut len = 0;
+        while len < buf.len() {
+            let count = array.buffer(&mut buf[len..]).await?;
+            if count == 0 {
+                return Err(Error::invalid_length(len, Self::expecting()));
+            }
+            len += count;
         }
+
+        if array.buffer(&mut [0u8; 1]).await? != 0 {
+            return Err(Error::invalid_length(17, Self::expecting()));
+        }
+
+        Ok(Uuid::from_bytes(buf))
     }
 
     fn visit_string<E: Error>(self, v: String) -> Result<Self::Value, E> {
@@ -862,6 +881,10 @@ impl Visitor for UuidVisitor {
         let two = seq.expect_next::<u16>(()).await?;
         let three = seq.expect_next::<u16>(()).await?;
         let four = seq.expect_next::<[u8; 8]>(()).await?;
+
+        if seq.next_element::<IgnoredAny>(()).await?.is_some() {
+            return Err(Error::invalid_length(5, Self::expecting()));
+        }
 
         Ok(Uuid::from_fields(one, two, three, &four))
     }
@@ -963,6 +986,7 @@ impl Visitor for IgnoredAny {
         while let Some(IgnoredAny) = seq.next_element(()).await? {
             // Gobble
         }
+
         Ok(IgnoredAny)
     }
 
