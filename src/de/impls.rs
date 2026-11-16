@@ -15,6 +15,9 @@ use crate::IgnoredAny;
 
 macro_rules! autodecode {
     ($ty:ident, $visit_method:ident, $decode_method:ident) => {
+        autodecode!($ty, $visit_method, $decode_method, std::convert::identity);
+    };
+    ($ty:ident, $visit_method:ident, $decode_method:ident, $finish:expr) => {
         impl FromStream for $ty {
             type Context = ();
 
@@ -33,7 +36,7 @@ macro_rules! autodecode {
 
                     #[inline]
                     fn $visit_method<E: Error>(self, v: $ty) -> Result<Self::Value, E> {
-                        Ok(v)
+                        Ok(($finish)(v))
                     }
                 }
 
@@ -54,7 +57,9 @@ autodecode!(u32, visit_u32, decode_u32);
 autodecode!(u64, visit_u64, decode_u64);
 autodecode!(f32, visit_f32, decode_f32);
 autodecode!(f64, visit_f64, decode_f64);
-autodecode!(String, visit_string, decode_string);
+autodecode!(String, visit_string, decode_string, |value: String| value
+    .into_boxed_str()
+    .into_string());
 
 impl FromStream for i128 {
     type Context = ();
@@ -342,11 +347,19 @@ impl<T: Send + ?Sized> FromStream for PhantomData<T> {
 macro_rules! decode_seq {
     (
         $ty:ident < T $(: $tbound1:ident $(+ $tbound2:ident)*)* $(, $typaram:ident : $bound1:ident $(+ $bound2:ident)*)* >,
+        $access:ident, $clear:expr, $with_capacity:expr, $reserve:expr, $insert:expr
+    ) => {
+        decode_seq!($ty<T $(: $tbound1 $(+ $tbound2)*)* $(, $typaram : $bound1 $(+ $bound2)*)*>,
+            $access, $clear, $with_capacity, $reserve, $insert, std::convert::identity);
+    };
+    (
+        $ty:ident < T $(: $tbound1:ident $(+ $tbound2:ident)*)* $(, $typaram:ident : $bound1:ident $(+ $bound2:ident)*)* >,
         $access:ident,
         $clear:expr,
         $with_capacity:expr,
         $reserve:expr,
-        $insert:expr
+        $insert:expr,
+        $finish:expr
     ) => {
         impl<T $(, $typaram)*> FromStream for $ty<T $(, $typaram)*>
         where
@@ -381,7 +394,7 @@ macro_rules! decode_seq {
                             $insert(&mut values, value);
                         }
 
-                        Ok(values)
+                        Ok(($finish)(values))
                     }
                 }
 
@@ -443,7 +456,8 @@ decode_seq!(
     Vec::clear,
     Vec::with_capacity(size_hint::cautious(seq.size_hint())),
     Vec::reserve,
-    Vec::push
+    Vec::push,
+    |values: Vec<T>| values.into_boxed_slice().into_vec()
 );
 
 #[cfg(feature = "smallvec")]
@@ -484,6 +498,7 @@ where
                     items.push(item);
                 }
 
+                items.shrink_to_fit();
                 Ok(items)
             }
         }
