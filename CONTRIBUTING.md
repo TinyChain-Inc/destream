@@ -2,6 +2,16 @@
 
 Thanks for contributing to this TinyChain-managed dependency.
 
+## Local validation
+
+From a standalone checkout, run `bash .github/scripts/bootstrap-path-deps.sh`
+before Cargo commands. It fetches missing sibling path dependencies, including
+the JSON codec used by allocation regression tests and its transitive dependencies.
+Existing sibling checkouts are preserved. CI uses the same setup.
+
+Run `cargo fmt --all -- --check`, `cargo check`, and `cargo test` to match CI.
+Run `cargo clippy --all-targets --all-features -- -D warnings` for strict linting.
+
 ## Licensing and IP
 
 By contributing code, you represent that (a) you authored the work (or otherwise

@@ -12,6 +12,7 @@ categories = ["asynchronous", "encoding", "parsing", "rust-patterns"]
 keywords = ["stream", "streaming", "serialize", "deserialize"]
 
 [dev-dependencies]
+destream_json = { path = "../destream_json", version = "0.15", default-features = false }
 num-bigint = "0.4"
 num-traits = "0.2"
 

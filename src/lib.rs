@@ -13,6 +13,9 @@
 //!
 //! Ordinary typed values use [`FromStream`], [`ToStream`], and [`IntoStream`].
 //! Decoding constructs values without borrowing input buffers; encoding can borrow values.
+//! Completed `Vec` and `String` values discard spare capacity before returning;
+//! incremental growth remains internal to decoding. `SmallVec` decoding likewise
+//! shrinks completed storage, retaining its native inline representation when possible.
 //!
 //! For input-dependent nesting, value owners use iterative traversal with an explicit
 //! frame stack: [`de::Container`] provides a decoding cursor, and [`en::Event`]
