@@ -31,3 +31,10 @@ Arbitrary recursive visitors or leaf encoders do not become stack-safe automatic
 Each codec owns root/container validation, byte framing, and leaf encoding.
 `inspect_any` supplies structural observations
 without constructing decoded payloads; value owners supply allocation policy.
+
+`Encoder::encode_str` accepts borrowed or owned `AsRef<str> + Send` inputs for
+the encoding lifetime, including `&str`, `String`, and shared strings. An encoder
+may retain the input without copying it. `collect_str` instead formats immediately;
+its input need not outlive the returned stream, and formatting errors are returned
+synchronously. Its default implementation owns the formatted text; codecs may
+format directly into their output buffer.
