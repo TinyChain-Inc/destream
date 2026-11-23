@@ -38,3 +38,8 @@ may retain the input without copying it. `collect_str` instead formats immediate
 its input need not outlive the returned stream, and formatting errors are returned
 synchronously. Its default implementation owns the formatted text; codecs may
 format directly into their output buffer.
+
+Encoder output is format-specific: `Encoder::Ok` and the container builders'
+matching output types may be streams, futures, or completed values. Generic
+consumers that poll output as a stream declare that bound explicitly; input
+streams and structural events remain pull-driven.
