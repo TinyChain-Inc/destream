@@ -5,7 +5,7 @@
 //!  - **A type that implements `ToStream` is a data structure** that can be
 //!    encoded to any stream format supported by `destream`, and conversely
 //!  - **A type that implements `Encoder` is a data format** that can
-//!    encode any supported data structure into a stream.
+//!    encode any supported data structure into its format-specific output.
 //!
 //! # The ToStream trait
 //!
@@ -110,7 +110,7 @@ impl<K, V, S: Stream<Item = (K, V)>> From<S> for MapStream<K, V, S> {
 /// Returned from `Encoder::encode_map`.
 pub trait EncodeMap<'en> {
     /// Must match the `Ok` type of the parent [`Encoder`].
-    type Ok: Stream + Send + Unpin + 'en;
+    type Ok: Send + Unpin + 'en;
 
     /// Must match the `Error` type of the parent [`Encoder`].
     type Error: Error + Send + Unpin + 'en;
@@ -172,7 +172,7 @@ impl<T, S: Stream<Item = T>> From<S> for SeqStream<T, S> {
 /// Returned from `Encoder::encode_seq`.
 pub trait EncodeSeq<'en> {
     /// Must match the `Ok` type of the parent [`Encoder`].
-    type Ok: Stream + Send + Unpin + 'en;
+    type Ok: Send + Unpin + 'en;
 
     /// Must match the `Error` type of the parent [`Encoder`].
     type Error: Error + Send + Unpin + 'en;
@@ -187,7 +187,7 @@ pub trait EncodeSeq<'en> {
 /// Returned from `Encoder::encode_tuple`.
 pub trait EncodeTuple<'en> {
     /// Must match the `Ok` type of the parent [`Encoder`].
-    type Ok: Stream + Send + Unpin + 'en;
+    type Ok: Send + Unpin + 'en;
 
     /// Must match the `Error` type of the parent [`Encoder`].
     type Error: Error + Send + Unpin + 'en;
@@ -199,12 +199,15 @@ pub trait EncodeTuple<'en> {
     fn end(self) -> Result<Self::Ok, Self::Error>;
 }
 
-/// A data format that can encode and stream any data structure supported by destream.
+/// A data format that can encode any data structure supported by destream.
 ///
 /// Based on `serde::ser::Serializer`.
 pub trait Encoder<'en>: Sized {
     /// The output type produced by this [`Encoder`].
-    type Ok: Stream + Send + Unpin + 'en;
+    /// Concrete encoders choose how it is consumed, for example as a byte stream
+    /// or a future producing a materialized value. Generic consumers that poll
+    /// output as a stream must require `Self::Ok: Stream` explicitly.
+    type Ok: Send + Unpin + 'en;
 
     /// The type returned when an encoding error is encountered.
     type Error: Error + Send + Unpin + 'en;
