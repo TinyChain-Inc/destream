@@ -12,8 +12,6 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
-            - name: Bootstrap local path dependencies
-              run: bash .github/scripts/bootstrap-path-deps.sh
             - uses: dtolnay/rust-toolchain@stable
             - uses: r7kamura/rust-problem-matchers@v1.5.0
             - uses: actions/cache@v4

@@ -45,97 +45,97 @@ autoencode!(f64, encode_f64);
 
 impl<'en> ToStream<'en> for i128 {
     fn to_stream<E: Encoder<'en>>(&'en self, encoder: E) -> Result<E::Ok, E::Error> {
-        IntoStream::into_stream(self.to_string(), encoder)
+        encoder.collect_str(self)
     }
 }
 
 impl<'en> IntoStream<'en> for i128 {
     fn into_stream<E: Encoder<'en>>(self, encoder: E) -> Result<E::Ok, E::Error> {
-        IntoStream::into_stream(self.to_string(), encoder)
+        encoder.collect_str(&self)
     }
 }
 
 impl<'en> ToStream<'en> for u128 {
     fn to_stream<E: Encoder<'en>>(&'en self, encoder: E) -> Result<E::Ok, E::Error> {
-        IntoStream::into_stream(self.to_string(), encoder)
+        encoder.collect_str(self)
     }
 }
 
 impl<'en> IntoStream<'en> for u128 {
     fn into_stream<E: Encoder<'en>>(self, encoder: E) -> Result<E::Ok, E::Error> {
-        IntoStream::into_stream(self.to_string(), encoder)
+        encoder.collect_str(&self)
     }
 }
 
 impl<'en> ToStream<'en> for NonZeroI128 {
     fn to_stream<E: Encoder<'en>>(&'en self, encoder: E) -> Result<E::Ok, E::Error> {
-        IntoStream::into_stream(self.get().to_string(), encoder)
+        encoder.collect_str(&self.get())
     }
 }
 
 impl<'en> IntoStream<'en> for NonZeroI128 {
     fn into_stream<E: Encoder<'en>>(self, encoder: E) -> Result<E::Ok, E::Error> {
-        IntoStream::into_stream(self.get().to_string(), encoder)
+        encoder.collect_str(&self.get())
     }
 }
 
 impl<'en> ToStream<'en> for NonZeroU128 {
     fn to_stream<E: Encoder<'en>>(&'en self, encoder: E) -> Result<E::Ok, E::Error> {
-        IntoStream::into_stream(self.get().to_string(), encoder)
+        encoder.collect_str(&self.get())
     }
 }
 
 impl<'en> IntoStream<'en> for NonZeroU128 {
     fn into_stream<E: Encoder<'en>>(self, encoder: E) -> Result<E::Ok, E::Error> {
-        IntoStream::into_stream(self.get().to_string(), encoder)
+        encoder.collect_str(&self.get())
     }
 }
 
 impl<'en> ToStream<'en> for IpAddr {
     fn to_stream<E: Encoder<'en>>(&'en self, encoder: E) -> Result<E::Ok, E::Error> {
-        IntoStream::into_stream(self.to_string(), encoder)
+        encoder.collect_str(self)
     }
 }
 
 impl<'en> IntoStream<'en> for IpAddr {
     fn into_stream<E: Encoder<'en>>(self, encoder: E) -> Result<E::Ok, E::Error> {
-        IntoStream::into_stream(self.to_string(), encoder)
+        encoder.collect_str(&self)
     }
 }
 
 impl<'en> ToStream<'en> for Ipv4Addr {
     fn to_stream<E: Encoder<'en>>(&'en self, encoder: E) -> Result<E::Ok, E::Error> {
-        IntoStream::into_stream(self.to_string(), encoder)
+        encoder.collect_str(self)
     }
 }
 
 impl<'en> IntoStream<'en> for Ipv4Addr {
     fn into_stream<E: Encoder<'en>>(self, encoder: E) -> Result<E::Ok, E::Error> {
-        IntoStream::into_stream(self.to_string(), encoder)
+        encoder.collect_str(&self)
     }
 }
 
 impl<'en> ToStream<'en> for Ipv6Addr {
     fn to_stream<E: Encoder<'en>>(&'en self, encoder: E) -> Result<E::Ok, E::Error> {
-        IntoStream::into_stream(self.to_string(), encoder)
+        encoder.collect_str(self)
     }
 }
 
 impl<'en> IntoStream<'en> for Ipv6Addr {
     fn into_stream<E: Encoder<'en>>(self, encoder: E) -> Result<E::Ok, E::Error> {
-        IntoStream::into_stream(self.to_string(), encoder)
+        encoder.collect_str(&self)
     }
 }
 
 impl<'en> ToStream<'en> for SocketAddr {
     fn to_stream<E: Encoder<'en>>(&'en self, encoder: E) -> Result<E::Ok, E::Error> {
-        IntoStream::into_stream(self.to_string(), encoder)
+        encoder.collect_str(self)
     }
 }
 
 impl<'en> IntoStream<'en> for SocketAddr {
     fn into_stream<E: Encoder<'en>>(self, encoder: E) -> Result<E::Ok, E::Error> {
-        IntoStream::into_stream(self.to_string(), encoder)
+        encoder.collect_str(&self)
     }
 }
 
@@ -199,7 +199,7 @@ impl<'en> IntoStream<'en> for String {
         self,
         encoder: E,
     ) -> Result<<E as Encoder<'en>>::Ok, <E as Encoder<'en>>::Error> {
-        encoder.encode_str(&self)
+        encoder.encode_str(self)
     }
 }
 

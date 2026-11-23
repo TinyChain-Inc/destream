@@ -343,8 +343,27 @@ pub trait Encoder<'en>: Sized {
         S: Stream<Item = T> + Send + Unpin + 'en,
         <T as IntoIterator>::IntoIter: Send + Unpin + 'en;
 
-    /// Encode a `&str`.
-    fn encode_str(self, v: &str) -> Result<Self::Ok, Self::Error>;
+    /// Encode borrowed or owned UTF-8 text. The encoder may retain the input
+    /// for the output lifetime; ownership and cloning are not required.
+    ///
+    /// ```
+    /// use destream::en::Encoder;
+    /// fn borrowed<'en, E: Encoder<'en>>(e: E, s: &'en str) -> Result<E::Ok, E::Error> {
+    ///     e.encode_str(s)
+    /// }
+    /// fn owned<'en, E: Encoder<'en>>(e: E, s: String) -> Result<E::Ok, E::Error> {
+    ///     e.encode_str(s)
+    /// }
+    /// ```
+    ///
+    /// ```compile_fail
+    /// use destream::en::Encoder;
+    /// fn temporary<'en, E: Encoder<'en>>(e: E) -> Result<E::Ok, E::Error> {
+    ///     let text = String::from("temporary");
+    ///     e.encode_str(text.as_str())
+    /// }
+    /// ```
+    fn encode_str<S: AsRef<str> + Send + 'en>(self, v: S) -> Result<Self::Ok, Self::Error>;
 
     /// Encode a [`None`] value.
     ///
@@ -442,9 +461,17 @@ pub trait Encoder<'en>: Sized {
         encoder.end()
     }
 
-    /// Encode a string produced by an implementation of `Display`.
+    /// Format a string immediately, returning any formatting error before
+    /// producing a stream. The input need not outlive the output stream.
+    ///
+    /// The default implementation owns the formatted text. Encoders may override
+    /// this to format directly into their output buffer.
     fn collect_str<T: fmt::Display + ?Sized>(self, value: &T) -> Result<Self::Ok, Self::Error> {
-        self.encode_str(&value.to_string())
+        let mut text = String::new();
+        fmt::write(&mut text, format_args!("{value}"))
+            .map_err(|_| Self::Error::custom("failed to format string"))?;
+
+        self.encode_str(text)
     }
 }
 
